@@ -20,7 +20,6 @@
 """Early initialization and main entry point."""
 
 import sys
-import json
 
 import qutebrowser
 try:
@@ -154,6 +153,7 @@ def main():
         # When restarting, we serialize the argparse namespace into json, and
         # construct a "fake" argparse.Namespace here based on the data loaded
         # from json.
+        import json
         data = json.loads(args.json_args)
         args = argparse.Namespace(**data)
     earlyinit.earlyinit(args)

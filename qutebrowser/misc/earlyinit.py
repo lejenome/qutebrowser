@@ -32,14 +32,9 @@ except ImportError:
 import os
 import sys
 import faulthandler
-import traceback
 import signal
 import operator
 import importlib
-try:
-    import tkinter
-except ImportError:
-    tkinter = None
 # NOTE: No qutebrowser or PyQt import should be done here, as some early
 # initialization needs to take place before that!
 
@@ -94,6 +89,7 @@ def _die(message, exception=None):
     from PyQt5.QtCore import Qt
     if (('--debug' in sys.argv or '--no-err-windows' in sys.argv) and
             exception is not None):
+        import traceback
         print(file=sys.stderr)
         traceback.print_exc()
     app = QApplication(sys.argv)
@@ -199,6 +195,10 @@ def check_pyqt_core():
     try:
         import PyQt5.QtCore  # pylint: disable=unused-variable
     except ImportError as e:
+        try:
+            import tkinter
+        except ImportError:
+            tkinter = None
         text = _missing_str('PyQt5',
                             windows="Use the installer by Riverbank computing "
                                     "or the standalone qutebrowser exe.<br />"
@@ -215,6 +215,7 @@ def check_pyqt_core():
         else:
             print(text, file=sys.stderr)
         if '--debug' in sys.argv or '--no-err-windows' in sys.argv:
+            import traceback
             print(file=sys.stderr)
             traceback.print_exc()
         sys.exit(1)

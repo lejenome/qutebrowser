@@ -21,13 +21,9 @@
 
 import os
 import sys
-import subprocess
 import configparser
 import functools
-import json
-import shutil
 import tempfile
-import atexit
 import datetime
 import tokenize
 
@@ -540,6 +536,7 @@ class Quitter:
         argdict['temp_basedir_restarted'] = True
 
         # Dump the data
+        import json
         data = json.dumps(argdict)
         args += ['--json-args', data]
 
@@ -591,6 +588,7 @@ class Quitter:
             session_manager.save(session)
         # Open a new process and immediately shutdown the existing one
         try:
+            import subprocess
             args, cwd = self._get_restart_args(pages, session)
             if cwd is None:
                 subprocess.Popen(args)
@@ -693,6 +691,8 @@ class Quitter:
         # Delete temp basedir
         if ((self._args.temp_basedir or self._args.temp_basedir_restarted) and
                 not restart):
+            import shutil
+            import atexit
             atexit.register(shutil.rmtree, self._args.basedir,
                             ignore_errors=True)
         # Delete temp download dir

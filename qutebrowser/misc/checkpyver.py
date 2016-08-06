@@ -24,19 +24,6 @@ This should import and run fine with both python2 and python3.
 
 import sys
 
-try:
-    # Python3
-    from tkinter import Tk, messagebox
-except ImportError:  # pragma: no cover
-    try:
-        # Python2
-        from Tkinter import Tk
-        import tkMessageBox as messagebox
-    except ImportError:
-        # Some Python without Tk
-        Tk = None
-        messagebox = None
-
 
 # First we check the version of Python. This code should run fine with python2
 # and python3. We don't have Qt available here yet, so we just print an error
@@ -44,6 +31,18 @@ except ImportError:  # pragma: no cover
 def check_python_version():
     """Check if correct python version is run."""
     if sys.hexversion < 0x03040000:
+        try:
+            # Python3
+            from tkinter import Tk, messagebox
+        except ImportError:  # pragma: no cover
+            try:
+                # Python2
+                from Tkinter import Tk
+                import tkMessageBox as messagebox
+            except ImportError:
+                # Some Python without Tk
+                Tk = None
+                messagebox = None
         # We don't use .format() and print_function here just in case someone
         # still has < 2.6 installed.
         # pylint: disable=bad-builtin

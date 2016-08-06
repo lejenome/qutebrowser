@@ -36,7 +36,7 @@ from qutebrowser.completion import completionwidget, completer
 from qutebrowser.keyinput import modeman
 from qutebrowser.browser import commands, downloadview, hints
 from qutebrowser.browser.webkit import downloads
-from qutebrowser.misc import crashsignal, keyhintwidget
+from qutebrowser.misc import keyhintwidget
 
 
 win_id_gen = itertools.count(0)
@@ -467,6 +467,7 @@ class MainWindow(QWidget):
 
     def closeEvent(self, e):
         """Override closeEvent to display a confirmation if needed."""
+        from qutebrowser.misc import crashsignal
         if crashsignal.is_crashing:
             e.accept()
             return
