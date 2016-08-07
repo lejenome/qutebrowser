@@ -275,8 +275,11 @@ class Completer(QObject):
         For performance reasons we don't want to block here, instead we do this
         in the background.
         """
-        if (self._cmd.cursorPosition() == self._last_cursor_pos and
-                self._cmd.text() == self._last_text):
+        self._last_cursor_part = self._cursor_part
+        self._update_cursor_part()
+        if (self._cmd.text() == self._last_text and
+                (self._cmd.cursorPosition() == self._last_cursor_pos or
+                self._last_cursor_part == self._cursor_part)):
             log.completion.debug("Ignoring update because there were no "
                                  "changes.")
         else:
@@ -288,7 +291,6 @@ class Completer(QObject):
     @pyqtSlot()
     def _update_completion(self):
         """Check if completions are available and activate them."""
-        self._update_cursor_part()
         parts = self._split()
 
         log.completion.debug(

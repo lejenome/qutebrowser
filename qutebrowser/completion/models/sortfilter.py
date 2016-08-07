@@ -48,6 +48,7 @@ class CompletionFilterModel(QSortFilterProxyModel):
         self.srcmodel = source
         self.pattern = ''
         self.pattern_re = None
+        self.ws = re.compile(r'(?:\\ )+')
 
         dumb_sort = self.srcmodel.DUMB_SORT
         if dumb_sort is None:
@@ -69,7 +70,7 @@ class CompletionFilterModel(QSortFilterProxyModel):
         with debug.log_time(log.completion, 'Setting filter pattern'):
             self.pattern = val
             val = re.escape(val)
-            val = val.replace(r'\ ', r'.*')
+            val = re.sub(self.ws, r'.*', val)
             self.pattern_re = re.compile(val, re.IGNORECASE)
             self.invalidate()
             sortcol = 0
