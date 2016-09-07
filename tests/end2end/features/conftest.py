@@ -322,6 +322,12 @@ def wait_scroll_position_arg(quteproc, x, y):
     quteproc.wait_scroll_pos_changed(x, y)
 
 
+@bdd.when(bdd.parsers.parse('I wait for "{message}" in the javascript log'))
+def javascript_message_logged_when(quteproc, message):
+    """Wait until the given message was logged via javascript."""
+    quteproc.wait_for_js(message)
+
+
 ## Then
 
 

@@ -234,6 +234,7 @@ Feature: Yanking and pasting.
         And I run :click-element id qute-textarea
         And I wait for "Clicked editable element!" in the log
         And I run :insert-text Hello world
+        And I wait for "Text changed to: Hello world" in the javascript log
         # Compare
         Then the text field should contain "Hello world"
 
@@ -247,6 +248,7 @@ Feature: Yanking and pasting.
         And I press the key "<Right>"
         And I press the key "<Right>"
         And I run :insert-text Hello world
+        And I wait for "Text changed to: onHello worlde two three four" in the javascript log
         # Compare
         Then the text field should contain "onHello worlde two three four"
 
@@ -256,9 +258,12 @@ Feature: Yanking and pasting.
         And I wait for "Clicked editable element!" in the log
         # Paste and undo
         And I run :insert-text This text should be undone
+        And I wait for "Text changed to: This text should be undone" in the javascript log
         And I press the key "<Ctrl+z>"
+        And I wait for "Text deleted" in the javascript log
         # Paste final text
         And I run :insert-text This text should stay
+        And I wait for "Text changed to: This text should stay" in the javascript log
         # Compare
         Then the text field should contain "This text should stay"
 

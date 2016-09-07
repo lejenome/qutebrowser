@@ -3,8 +3,20 @@
     <head>
         <meta charset="utf-8">
         <title>Paste primary selection</title>
+    <script type="text/javascript">
+          function attach_logger() {
+              var elem = document.getElementById('qute-textarea');
+              elem.addEventListener('input', function() {
+                  if (elem.value) {
+                      console.log("Text changed to: " + elem.value);
+                  } else {
+                      console.log("Text deleted");
+                  }
+              }, false);
+          }
+    </script>
     </head>
-    <body>
+    <body onload="attach_logger()">
         <textarea id="qute-textarea"></textarea>
         <textarea id="qute-textarea-noedit" readonly></textarea>
     </body>
