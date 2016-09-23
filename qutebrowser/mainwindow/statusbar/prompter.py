@@ -30,9 +30,6 @@ from qutebrowser.commands import cmdutils, cmdexc
 from qutebrowser.utils import usertypes, log, qtutils, objreg, utils
 
 
-PromptContext = collections.namedtuple('PromptContext',
-                                       ['question', 'text', 'input_text',
-                                        'echo_mode', 'input_visible'])
 AuthTuple = collections.namedtuple('AuthTuple', ['user', 'password'])
 
 
@@ -67,12 +64,8 @@ class Prompter(QObject):
         _question: A Question object with the question to be asked to the user.
         _loops: A list of local EventLoops to spin in when blocking.
         _queue: A deque of waiting questions.
-        _busy: If we're currently busy with asking a question.
+        _prompt: The current prompt object if we're handling a question.
         _win_id: The window ID this object is associated with.
-
-    Signals:
-        show_prompt: Emitted when the prompt widget should be shown.
-        hide_prompt: Emitted when the prompt widget should be hidden.
     """
 
     KEY_MODES = {
@@ -83,22 +76,19 @@ class Prompter(QObject):
         usertypes.PromptMode.download: usertypes.KeyMode.prompt,
     }
 
-    show_prompt = pyqtSignal()
-    hide_prompt = pyqtSignal()
-
     def __init__(self, win_id, parent=None):
         super().__init__(parent)
         self._shutting_down = False
         self._question = None
         self._loops = []
         self._queue = collections.deque()
-        self._busy = False
+        self._prompt = None
         self._win_id = win_id
 
     def __repr__(self):
         return utils.get_repr(self, loops=len(self._loops),
                               question=self._question, queue=len(self._queue),
-                              busy=self._busy)
+                              prompt=self._prompt)
 
     def _pop_later(self):
         """Helper to call self._pop as soon as everything else is done."""
@@ -115,78 +105,31 @@ class Prompter(QObject):
                 # https://github.com/The-Compiler/qutebrowser/issues/415
                 self.ask_question(question, blocking=False)
 
-    def _get_ctx(self):
-        """Get a PromptContext based on the current state."""
-        if not self._busy:
-            return None
-        prompt = objreg.get('prompt', scope='window', window=self._win_id)
-        ctx = PromptContext(question=self._question,
-                            text=prompt.txt.text(),
-                            input_text=prompt.lineedit.text(),
-                            echo_mode=prompt.lineedit.echoMode(),
-                            input_visible=prompt.lineedit.isVisible())
-        return ctx
-
-    def _restore_ctx(self, ctx):
-        """Restore state from a PromptContext.
+    def _restore_prompt(self, prompt):
+        """Restore an old prompt which was interrupted.
 
         Args:
-            ctx: A PromptContext previously saved by _get_ctx, or None.
+            prompt: A Prompt object or None.
 
-        Return: True if a context was restored, False otherwise.
+        Return: True if a prompt was restored, False otherwise.
         """
-        log.statusbar.debug("Restoring context {}".format(ctx))
-        if ctx is None:
-            self.hide_prompt.emit()
-            self._busy = False
+        log.statusbar.debug("Restoring prompt {}".format(prompt))
+        if prompt is None:
+            self._prompt.hide()  # FIXME
+            self._prompt = None
             return False
         self._question = ctx.question
-        prompt = objreg.get('prompt', scope='window', window=self._win_id)
-        prompt.txt.setText(ctx.text)
-        prompt.lineedit.setText(ctx.input_text)
-        prompt.lineedit.setEchoMode(ctx.echo_mode)
-        prompt.lineedit.setVisible(ctx.input_visible)
-        self.show_prompt.emit()
+        self._prompt = prompt
+        # FIXME do promptcintainer stuff here??
+        prompt.show()
         mode = self.KEY_MODES[ctx.question.mode]
         ctx.question.aborted.connect(
             lambda: modeman.maybe_leave(self._win_id, mode, 'aborted'))
         modeman.enter(self._win_id, mode, 'question asked')
         return True
 
-    def _display_question_yesno(self, prompt):
-        """Display a yes/no question."""
-        if self._question.default is None:
-            suffix = ""
-        elif self._question.default:
-            suffix = " (yes)"
-        else:
-            suffix = " (no)"
-        prompt.txt.setText(self._question.text + suffix)
-        prompt.lineedit.hide()
-
-    def _display_question_input(self, prompt):
-        """Display a question with an input."""
-        text = self._question.text
-        if self._question.mode == usertypes.PromptMode.download:
-            key_mode = self.KEY_MODES[self._question.mode]
-            key_config = objreg.get('key-config')
-            all_bindings = key_config.get_reverse_bindings_for(key_mode.name)
-            bindings = all_bindings.get('prompt-open-download', [])
-            if bindings:
-                text += ' ({} to open)'.format(bindings[0])
-        prompt.txt.setText(text)
-        if self._question.default:
-            prompt.lineedit.setText(self._question.default)
-        prompt.lineedit.show()
-
-    def _display_question_alert(self, prompt):
-        """Display a JS alert 'question'."""
-        prompt.txt.setText(self._question.text + ' (ok)')
-        prompt.lineedit.hide()
-
     def _display_question(self):
         """Display the question saved in self._question."""
-        prompt = objreg.get('prompt', scope='window', window=self._win_id)
         handlers = {
             usertypes.PromptMode.yesno: self._display_question_yesno,
             usertypes.PromptMode.text: self._display_question_input,
@@ -199,8 +142,9 @@ class Prompter(QObject):
         log.modes.debug("Question asked, focusing {!r}".format(
             prompt.lineedit))
         prompt.lineedit.setFocus()
-        self.show_prompt.emit()
-        self._busy = True
+        prompt.show()
+        # FIXME
+        self._prompt = prompt
 
     def shutdown(self):
         """Cancel all blocking questions.
@@ -228,8 +172,8 @@ class Prompter(QObject):
             prompt.txt.setText('')
             prompt.lineedit.clear()
             prompt.lineedit.setEchoMode(QLineEdit.Normal)
-            self.hide_prompt.emit()
-            self._busy = False
+            self._prompt.hide()  # FIXME
+            self._prompt = None
             if self._question.answer is None and not self._question.is_aborted:
                 self._question.cancel()
 
@@ -376,7 +320,7 @@ class Prompter(QObject):
             question.abort()
             return None
 
-        if self._busy and not blocking:
+        if self._prompt is not None and not blocking:
             # We got an async question, but we're already busy with one, so we
             # just queue it up for later.
             log.statusbar.debug("Adding {} to queue.".format(question))
@@ -386,7 +330,7 @@ class Prompter(QObject):
         if blocking:
             # If we're blocking we save the old state on the stack, so we can
             # restore it after exec, if exec gets called multiple times.
-            context = self._get_ctx()
+            old_prompt = self._prompt
 
         self._question = question
         self._display_question()
@@ -401,7 +345,7 @@ class Prompter(QObject):
             question.completed.connect(loop.quit)
             question.completed.connect(loop.deleteLater)
             loop.exec_()
-            if not self._restore_ctx(context):
+            if not self._restore_prompt(old_prompt):
                 # Nothing left to restore, so we can go back to popping async
                 # questions.
                 if self._queue:

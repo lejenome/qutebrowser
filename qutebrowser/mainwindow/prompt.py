@@ -80,14 +80,6 @@ class PromptContainer(QWidget):
         self._layout.addWidget(prompt)
         self.update_geometry.emit()
 
-    # FIXME we probably need to move things from Prompter here
-
-    def ask_question(self, question):
-        assert question.mode == usertypes.PromptMode.user_pwd
-        #prompt = LineEditPrompt(question)
-        prompt = AuthenticationPrompt(question)
-        self._show_prompt(prompt)
-
 
 class _BasePrompt(QWidget):
 
@@ -101,6 +93,9 @@ class _BasePrompt(QWidget):
     def _init_title(self, title, *, span=1):
         label = QLabel('<b>{}</b>'.format(title), self)
         self._layout.addWidget(label, 0, 0, 1, span)
+
+    def accept(self, value=None):
+        pass
 
 
 class LineEditPrompt(_BasePrompt):
@@ -138,3 +133,36 @@ class AuthenticationPrompt(_BasePrompt):
         help_2 = QLabel("<b>Abort:</b> Escape")
         self._layout.addWidget(help_1, 4, 0)
         self._layout.addWidget(help_2, 5, 0)
+
+
+# def _display_question_yesno(self, prompt):
+#     """Display a yes/no question."""
+#     if self._question.default is None:
+#         suffix = ""
+#     elif self._question.default:
+#         suffix = " (yes)"
+#     else:
+#         suffix = " (no)"
+#     prompt.txt.setText(self._question.text + suffix)
+#     prompt.lineedit.hide()
+
+# def _display_question_input(self, prompt):
+#     """Display a question with an input."""
+#     text = self._question.text
+#     if self._question.mode == usertypes.PromptMode.download:
+#         key_mode = self.KEY_MODES[self._question.mode]
+#         key_config = objreg.get('key-config')
+#         all_bindings = key_config.get_reverse_bindings_for(key_mode.name)
+#         bindings = all_bindings.get('prompt-open-download', [])
+#         if bindings:
+#             text += ' ({} to open)'.format(bindings[0])
+#     prompt.txt.setText(text)
+#     if self._question.default:
+#         prompt.lineedit.setText(self._question.default)
+#     prompt.lineedit.show()
+
+# def _display_question_alert(self, prompt):
+#     """Display a JS alert 'question'."""
+#     prompt.txt.setText(self._question.text + ' (ok)')
+#     prompt.lineedit.hide()
+
