@@ -30,9 +30,6 @@ from qutebrowser.commands import cmdutils, cmdexc
 from qutebrowser.utils import usertypes, log, qtutils, objreg, utils
 
 
-AuthTuple = collections.namedtuple('AuthTuple', ['user', 'password'])
-
-
 class Prompter(QObject):
 
     """Manager for questions to be shown in the statusbar.
@@ -195,32 +192,12 @@ class Prompter(QObject):
         prompt = objreg.get('prompt', scope='window', window=self._win_id)
         text = value if value is not None else prompt.lineedit.text()
 
-        if (self._question.mode == usertypes.PromptMode.user_pwd and
-                self._question.user is None):
-            # User just entered a username
-            self._question.user = text
-            prompt.txt.setText("Password:")
-            prompt.lineedit.clear()
-            prompt.lineedit.setEchoMode(QLineEdit.Password)
-        elif self._question.mode == usertypes.PromptMode.user_pwd:
-            # User just entered a password
-            self._question.answer = AuthTuple(self._question.user, text)
-            modeman.maybe_leave(self._win_id, usertypes.KeyMode.prompt,
-                                'prompt accept')
-            self._question.done()
-        elif self._question.mode == usertypes.PromptMode.text:
-            # User just entered text.
-            self._question.answer = text
-            modeman.maybe_leave(self._win_id, usertypes.KeyMode.prompt,
-                                'prompt accept')
-            self._question.done()
-        elif self._question.mode == usertypes.PromptMode.download:
-            # User just entered a path for a download.
-            target = usertypes.FileDownloadTarget(text)
-            self._question.answer = target
-            modeman.maybe_leave(self._win_id, usertypes.KeyMode.prompt,
-                                'prompt accept')
-            self._question.done()
+        # FIXME
+        self._prompt.accept(text)
+        modeman.maybe_leave(self._win_id, self._question.mode,
+                            ':prompt-accept')
+        self._question.done()
+
         elif self._question.mode == usertypes.PromptMode.yesno:
             # User wants to accept the default of a yes/no question.
             if value is None:

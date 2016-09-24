@@ -19,11 +19,21 @@
 
 """Showing prompts above the statusbar."""
 
+import collections
+
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtWidgets import QWidget, QGridLayout, QVBoxLayout, QLineEdit, QLabel, QSpacerItem
 
 from qutebrowser.config import style, config
 from qutebrowser.utils import usertypes
+
+
+AuthTuple = collections.namedtuple('AuthTuple', ['user', 'password'])
+
+
+class Error(Exception):
+
+    """Base class for errors in this module."""
 
 
 class PromptContainer(QWidget):
@@ -95,18 +105,31 @@ class _BasePrompt(QWidget):
         self._layout.addWidget(label, 0, 0, 1, span)
 
     def accept(self, value=None):
-        pass
+        raise NotImplementedError
 
 
 class LineEditPrompt(_BasePrompt):
 
     def __init__(self, question, parent=None):
         super().__init__(parent)
-        qle = QLineEdit(self)
-        self._layout.addWidget(qle, 1, 0)
+        self._lineedit = QLineEdit(self)
+        self._layout.addWidget(self._lineedit, 1, 0)
         self._init_title(question.text)
         if question.default:
-            qle.setText(question.default)
+            self._lineedit.setText(question.default)
+
+    def accept(self, value=None):
+        text = value if value is not None else self._lineedit.text()
+        self._question.answer = text
+
+
+class DownloadFilenamePrompt(LineEditPrompt):
+
+    # FIXME have a FilenamePrompt
+
+    def accept(self, value=None):
+        text = value if value is not None else self._lineedit.text()
+        self._question.answer = usertypes.FileDownloadTarget(text)
 
 
 class AuthenticationPrompt(_BasePrompt):
@@ -115,16 +138,15 @@ class AuthenticationPrompt(_BasePrompt):
         super().__init__(parent)
         self._init_title(question.text, span=2)
         user_label = QLabel("Username:", self)
-        user_qle = QLineEdit(self)
+        self._user_lineedit = QLineEdit(self)
         password_label = QLabel("Password:", self)
-        password_qle = QLineEdit(self)
-        password_qle.setEchoMode(QLineEdit.Password)
+        self._password_lineedit = QLineEdit(self)
+        self._password_lineedit.setEchoMode(QLineEdit.Password)
         self._layout.addWidget(user_label, 1, 0)
-        self._layout.addWidget(user_qle, 1, 1)
+        self._layout.addWidget(self._user_lineedit, 1, 1)
         self._layout.addWidget(password_label, 2, 0)
-        self._layout.addWidget(password_qle, 2, 1)
-        if question.default:
-            qle.setText(question.default)
+        self._layout.addWidget(self._password_lineedit, 2, 1)
+        assert not question.default, question.default
 
         spacer = QSpacerItem(0, 10)
         self._layout.addItem(spacer, 3, 0)
@@ -133,6 +155,18 @@ class AuthenticationPrompt(_BasePrompt):
         help_2 = QLabel("<b>Abort:</b> Escape")
         self._layout.addWidget(help_1, 4, 0)
         self._layout.addWidget(help_2, 5, 0)
+
+    def accept(self, value=None):
+        if value is not None:
+            if ':' not in value:
+                raise Error("Value needs to be in the format "
+                            "username:password, but {} was given".format(
+                                value))
+            username, password = value.split(':', maxsplit=1)
+            self._question.answer = AuthTuple(username, password)
+        else:
+            self._question.answer = AuthTuple(self._user_lineedit.text(),
+                                              self._password_lineedit.text())
 
 
 # def _display_question_yesno(self, prompt):

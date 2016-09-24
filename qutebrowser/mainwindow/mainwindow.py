@@ -186,6 +186,7 @@ class MainWindow(QWidget):
         self._add_overlay(self._promptcontainer,
                           self._promptcontainer.update_geometry,
                           centered=True)
+        self._promptcontainer.hide()
 
         log.init.debug("Initializing modes...")
         modeman.init(self.win_id, self)
