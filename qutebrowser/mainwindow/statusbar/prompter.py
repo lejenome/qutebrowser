@@ -192,63 +192,24 @@ class Prompter(QObject):
         prompt = objreg.get('prompt', scope='window', window=self._win_id)
         text = value if value is not None else prompt.lineedit.text()
 
-        # FIXME
         self._prompt.accept(text)
         modeman.maybe_leave(self._win_id, self._question.mode,
                             ':prompt-accept')
         self._question.done()
-
-        elif self._question.mode == usertypes.PromptMode.yesno:
-            # User wants to accept the default of a yes/no question.
-            if value is None:
-                self._question.answer = self._question.default
-            elif value == 'yes':
-                self._question.answer = True
-            elif value == 'no':
-                self._question.answer = False
-            else:
-                raise cmdexc.CommandError("Invalid value {} - expected "
-                                          "yes/no!".format(value))
-            modeman.maybe_leave(self._win_id, usertypes.KeyMode.yesno,
-                                'yesno accept')
-            self._question.done()
-        elif self._question.mode == usertypes.PromptMode.alert:
-            if value is not None:
-                raise cmdexc.CommandError("No value is permitted with alert "
-                                          "prompts!")
-            # User acknowledged an alert
-            self._question.answer = None
-            modeman.maybe_leave(self._win_id, usertypes.KeyMode.prompt,
-                                'alert accept')
-            self._question.done()
-        else:
-            raise ValueError("Invalid question mode!")
 
     @cmdutils.register(instance='prompter', hide=True, scope='window',
                        modes=[usertypes.KeyMode.yesno],
                        deprecated='Use :prompt-accept yes instead!')
     def prompt_yes(self):
         """Answer yes to a yes/no prompt."""
-        if self._question.mode != usertypes.PromptMode.yesno:
-            # We just ignore this if we don't have a yes/no question.
-            return
-        self._question.answer = True
-        modeman.maybe_leave(self._win_id, usertypes.KeyMode.yesno,
-                            'yesno accept')
-        self._question.done()
+        self.prompt_accept('yes')
 
     @cmdutils.register(instance='prompter', hide=True, scope='window',
                        modes=[usertypes.KeyMode.yesno],
                        deprecated='Use :prompt-accept no instead!')
     def prompt_no(self):
         """Answer no to a yes/no prompt."""
-        if self._question.mode != usertypes.PromptMode.yesno:
-            # We just ignore this if we don't have a yes/no question.
-            return
-        self._question.answer = False
-        modeman.maybe_leave(self._win_id, usertypes.KeyMode.yesno,
-                            'prompt accept')
-        self._question.done()
+        self.prompt_accept('no')
 
     @cmdutils.register(instance='prompter', hide=True, scope='window',
                        modes=[usertypes.KeyMode.prompt], maxsplit=0)

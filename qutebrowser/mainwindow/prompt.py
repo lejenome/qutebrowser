@@ -78,7 +78,6 @@ class PromptContainer(QWidget):
         else:
             raise ValueError("Invalid position {}!".format(position))
 
-
     def _show_prompt(self, prompt):
         while True:
             # FIXME do we really want to delete children?
@@ -95,8 +94,9 @@ class _BasePrompt(QWidget):
 
     """Base class for all prompts."""
 
-    def __init__(self, parent=None):
+    def __init__(self, question, parent=None):
         super().__init__(parent)
+        self._question = question
         self._layout = QGridLayout(self)
         self._layout.setVerticalSpacing(15)
 
@@ -127,6 +127,17 @@ class DownloadFilenamePrompt(LineEditPrompt):
 
     # FIXME have a FilenamePrompt
 
+    def __init__(self, question, parent=None):
+        super().__init__(question, parent)
+        # FIXME show :prompt-open-download keybinding
+#         key_mode = self.KEY_MODES[self._question.mode]
+#         key_config = objreg.get('key-config')
+#         all_bindings = key_config.get_reverse_bindings_for(key_mode.name)
+#         bindings = all_bindings.get('prompt-open-download', [])
+#         if bindings:
+#             text += ' ({} to open)'.format(bindings[0])
+
+
     def accept(self, value=None):
         text = value if value is not None else self._lineedit.text()
         self._question.answer = usertypes.FileDownloadTarget(text)
@@ -135,7 +146,7 @@ class DownloadFilenamePrompt(LineEditPrompt):
 class AuthenticationPrompt(_BasePrompt):
 
     def __init__(self, question, parent=None):
-        super().__init__(parent)
+        super().__init__(question, parent)
         self._init_title(question.text, span=2)
         user_label = QLabel("Username:", self)
         self._user_lineedit = QLineEdit(self)
@@ -169,34 +180,36 @@ class AuthenticationPrompt(_BasePrompt):
                                               self._password_lineedit.text())
 
 
-# def _display_question_yesno(self, prompt):
-#     """Display a yes/no question."""
-#     if self._question.default is None:
-#         suffix = ""
-#     elif self._question.default:
-#         suffix = " (yes)"
-#     else:
-#         suffix = " (no)"
-#     prompt.txt.setText(self._question.text + suffix)
-#     prompt.lineedit.hide()
+class YesNoPrompt(_BasePrompt):
 
-# def _display_question_input(self, prompt):
-#     """Display a question with an input."""
-#     text = self._question.text
-#     if self._question.mode == usertypes.PromptMode.download:
-#         key_mode = self.KEY_MODES[self._question.mode]
-#         key_config = objreg.get('key-config')
-#         all_bindings = key_config.get_reverse_bindings_for(key_mode.name)
-#         bindings = all_bindings.get('prompt-open-download', [])
-#         if bindings:
-#             text += ' ({} to open)'.format(bindings[0])
-#     prompt.txt.setText(text)
-#     if self._question.default:
-#         prompt.lineedit.setText(self._question.default)
-#     prompt.lineedit.show()
+    def __init__(self, question, parent=None):
+        super().__init__(question, parent)
+        self._init_title(question.text)
+        # FIXME
+        # "Enter/y: yes"
+        # "n: no"
+        # (depending on default)
 
-# def _display_question_alert(self, prompt):
-#     """Display a JS alert 'question'."""
-#     prompt.txt.setText(self._question.text + ' (ok)')
-#     prompt.lineedit.hide()
+    def accept(self, value=None):
+        if value is None:
+            self._question.answer = self._question.default
+        elif value == 'yes':
+            self._question.answer = True
+        elif value == 'no':
+            self._question.answer = False
+        else:
+            raise Error("Invalid value {} - expected yes/no!".format(value))
 
+
+class AlertPrompt(_BasePrompt):
+
+    def __init__(self, question, parent=None):
+        super().__init__(question, parent)
+        self._init_title(question.text)
+        # FIXME
+        # Enter: acknowledge
+
+    def accept(self, value=None):
+        if value is not None:
+            raise Error("No value is permitted with alert prompts!")
+        # Doing nothing otherwise
