@@ -63,6 +63,11 @@ window._qutebrowser.scroll = (function() {
         var elem = document.documentElement;
         var body = document.body;
 
+        console.log("body.scrollHeight = " + body.scrollHeight);
+        console.log("body.offsetHeight = " + body.offsetHeight);
+        console.log("elem.scrollHeight = " + elem.scrollHeight);
+        console.log("elem.offsetHeight = " + elem.offsetHeight);
+
         var pos = {
             "px": {"x": window.scrollX, "y": window.scrollY},
             "scroll": {

@@ -3,6 +3,7 @@ Feature: Scrolling
 
     Background:
         Given I open data/scroll/simple.html
+        And I set general -> log-javascript-console to info
         And I run :tab-only
 
     ## :scroll-px
