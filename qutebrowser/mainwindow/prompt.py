@@ -361,7 +361,7 @@ class _BasePrompt(QWidget):
     def _init_key_label(self):
         # Remove old grid
         if self._key_grid is not None:
-            self._vbox.removeWidget(self._key_grid)
+            self._vbox.removeLayout(self._key_grid)
 
         self._key_grid = QGridLayout()
         self._key_grid.setVerticalSpacing(0)
