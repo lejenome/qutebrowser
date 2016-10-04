@@ -32,7 +32,7 @@ from PyQt5.QtWidgets import (QWidget, QGridLayout, QVBoxLayout, QLineEdit,
 from qutebrowser.config import style, config
 from qutebrowser.utils import usertypes, log, utils, qtutils, objreg
 from qutebrowser.keyinput import modeman
-from qutebrowser.commands import cmdutils
+from qutebrowser.commands import cmdutils, cmdexc
 
 
 AuthTuple = collections.namedtuple('AuthTuple', ['user', 'password'])
