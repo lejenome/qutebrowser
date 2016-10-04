@@ -346,6 +346,7 @@ class _BasePrompt(QWidget):
         self._vbox = QVBoxLayout(self)
         self._vbox.setSpacing(15)
         self._key_grid = None
+        self._key_grid_item = None
 
     def __repr__(self):
         return utils.get_repr(self, question=self.question, constructor=True)
@@ -361,7 +362,7 @@ class _BasePrompt(QWidget):
     def _init_key_label(self):
         # Remove old grid
         if self._key_grid is not None:
-            self._vbox.removeLayout(self._key_grid)
+            self._vbox.removeItem(self._key_grid_item)
 
         self._key_grid = QGridLayout()
         self._key_grid.setVerticalSpacing(0)
@@ -389,6 +390,7 @@ class _BasePrompt(QWidget):
             self._key_grid.addWidget(text_label, i, 1)
 
         self._vbox.addLayout(self._key_grid)
+        self._key_grid_item = self._vbox.itemAt(self._vbox.count() - 1)
 
     def accept(self, value=None):
         raise NotImplementedError
